@@ -26,6 +26,7 @@ import com.example.larsv.chatapplication.Messages.UpdateMessage;
 
 import java.io.IOException;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
 
@@ -33,6 +34,8 @@ public class MainActivity extends AppCompatActivity {
 
     public static final String USERNAME = "USERNAME";
     public static final String ADDRESS = "ADDRESS";
+    public static final int WAIT_FOR_CONNECTION = 6000;
+    public static final int PORT = 1234;
     private String username;
     private String address;
     EditText txtUsername;
@@ -50,6 +53,8 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        //setting up textfields and buttons
         txtUsername = (EditText) findViewById(R.id.txtUsername);
         txtPassword = (EditText) findViewById(R.id.txtPassword);
         txtIP = (EditText) findViewById(R.id.txtIP);
@@ -59,12 +64,14 @@ public class MainActivity extends AppCompatActivity {
         txtUsername.setHint(R.string.username);
         txtPassword.setHint(R.string.password);
 
+        //intent filter for broadcast receiver
         IntentFilter myIntentFilter = new IntentFilter(CommunicationIntentService.LOGIN_DONE);
         LocalBroadcastManager.getInstance(this).registerReceiver(new MyReceiver(),
                 myIntentFilter);
     }
 
     public void buttonLogin(View view){
+        //save user info
         username = txtUsername.getText().toString();
         address = txtIP.getText().toString();
         SharedPreferences sharedPref = getSharedPreferences("UserInfo", Context.MODE_PRIVATE);
@@ -138,7 +145,11 @@ public class MainActivity extends AppCompatActivity {
                 while(CommunicationIntentService.getSocket() == null){
                     Thread.sleep(1);
                     count++;
-                    if (count > 10000){
+                    //Check if conneccted, if not connect
+                    //CommunicationIntentService.connectSocketIfDown(address, PORT);
+                    //try again
+                    if(count > WAIT_FOR_CONNECTION/2) CommunicationIntentService.connectSocketIfDown(address, PORT);
+                    if (count > WAIT_FOR_CONNECTION){
                         btnCreate.setAlpha(1f);
                         btnCreate.setClickable(true);
                         btnCreate.setText("Create");

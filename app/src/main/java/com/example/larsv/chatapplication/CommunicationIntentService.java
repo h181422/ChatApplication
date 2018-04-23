@@ -47,6 +47,7 @@ public class CommunicationIntentService extends IntentService {
     MotherOfAllMessages mom;
     String username = "Get the username";
     String address;
+    String sendTo;
 
     boolean amIBound = false;
     AppDatabase db;
@@ -89,9 +90,15 @@ public class CommunicationIntentService extends IntentService {
                 final String param1 = intent.getStringExtra(MainActivity.USERNAME);
                 address = intent.getStringExtra(MainActivity.ADDRESS);
                 username = param1;
+                SharedPreferences sharedPref = getSharedPreferences("UserInfo", Context.MODE_PRIVATE);
+                sendTo = sharedPref.getString("sendToKey", "ALL");
 
+                IncomingHandler ih = new IncomingHandler();
+
+                Log.i(TAG, (sendTo==null)?"null":sendTo);
+                if(sendTo != null)
                 db = Room.databaseBuilder(getApplicationContext(), AppDatabase.class,
-                        "ChatLog").allowMainThreadQueries().build();
+                        sendTo).allowMainThreadQueries().build();
 
                 handleActionFoo();
             }
@@ -109,9 +116,6 @@ public class CommunicationIntentService extends IntentService {
             socket = new Socket(serverAddress, 1234);
             mos = new MessageOutputStream(socket.getOutputStream());
             mis = new MessageInputStream(socket.getInputStream());
-            mos.writeMessage(new UpdateMessage(username, UpdateMessage.MY_NAME_IS));
-            mos.writeMessage(new com.example.larsv.chatapplication.Messages.Message(
-                    "A test", "ALL", username));
 
         } catch (UnknownHostException e) {
             Toast.makeText(getApplicationContext(), e.getMessage(), Toast.LENGTH_SHORT).show();
@@ -124,6 +128,14 @@ public class CommunicationIntentService extends IntentService {
             while(true) {
                 //Using the MessageInputStream to read a message from the socket
                 mom = mis.readMessage();
+
+                //save to correct database (one per client you chat with. + one for ALL)
+                SharedPreferences sharedPref = getSharedPreferences("UserInfo", Context.MODE_PRIVATE);
+                sendTo = sharedPref.getString("SendToKey", "ALL");
+                Log.i(TAG, sendTo);
+                db = Room.databaseBuilder(getApplicationContext(), AppDatabase.class,
+                        sendTo).allowMainThreadQueries().build();
+
 
                 if(mom == null) {
                     Log.i(TAG,"Server closed the connection prematurely");
@@ -147,14 +159,8 @@ public class CommunicationIntentService extends IntentService {
                     LocalBroadcastManager.getInstance(this).sendBroadcast(broadcastIntent);
                 }
                 else if(mom.getType() == MotherOfAllMessages.UPDATE_MESSAGE) {
-                    //Can be used to determine if a user is online.
                     UpdateMessage umsg = (UpdateMessage)mom;
-                    if(umsg.getStatus() == UpdateMessage.NOT_ONLINE) {
-
-                    }
-                    if(umsg.getStatus() == UpdateMessage.IS_ONLINE) {
-
-                    }else if( umsg.getStatus() == UpdateMessage.LOGIN_OK){
+                   if( umsg.getStatus() == UpdateMessage.LOGIN_OK){
                         Intent broadcastIntent = new Intent(LOGIN_DONE);
                         broadcastIntent.putExtra(LOGIN_DONE, umsg.serialize());
                         LocalBroadcastManager.getInstance(this).sendBroadcast(broadcastIntent);
@@ -187,10 +193,11 @@ public class CommunicationIntentService extends IntentService {
     class IncomingHandler extends Handler {
         @Override
         public void handleMessage(Message msg) {
+            Log.i(TAG, "Handler Message received. " + sendTo+" 1");
             switch (msg.what) {
                 case MSG_SAY_HELLO:
-                    Toast.makeText(getApplicationContext(), "hello!", Toast.LENGTH_SHORT).show();
-
+                    sendTo = msg.getData().getString(ChatActivity.MESSENGER_MESSAGE);
+                    Log.i(TAG, "Handler Message received. " + sendTo);
                     break;
                 default:
                     super.handleMessage(msg);
@@ -199,6 +206,14 @@ public class CommunicationIntentService extends IntentService {
     }
     public static Socket getSocket(){
         return socket;
+    }
+    public static void connectSocketIfDown(String address, int port) throws IOException {
+        if(socket == null){
+            socket = new Socket(address, port);
+        }
+        if(!socket.isConnected()){
+            socket = new Socket(address, port);
+        }
     }
 
 }

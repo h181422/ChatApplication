@@ -47,6 +47,7 @@ import java.util.List;
 
 public class ChatActivity extends AppCompatActivity {
     public static final String BROADCAST = "com.example.larsv.chatapplication.broadcast.BROADCAST";
+    public static final String MESSENGER_MESSAGE = "com.example.larsv.chatapplication.messenger.MS";
 
     SharedPreferences sharedPref;
     private RecyclerView mMessageRecycler;
@@ -74,17 +75,21 @@ public class ChatActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_chat);
 
-        String newString;
         if (savedInstanceState == null) {
             Bundle extras = getIntent().getExtras();
-            newString= extras.getString(MenuActivity.SEND_TO);
-            Toast.makeText(this, newString, Toast.LENGTH_SHORT).show();
+            sendTo = extras.getString(MenuActivity.SEND_TO);
+            Toast.makeText(this, sendTo, Toast.LENGTH_SHORT).show();
         }
 
         //Shared preferences
         sharedPref = getSharedPreferences("UserInfo", Context.MODE_PRIVATE);
         username = sharedPref.getString(getResources().getString(R.string.myUsernameKey), "Stranger");
         chatWindow = (EditText)findViewById(R.id.edittext_chatbox);
+
+        SharedPreferences.Editor editor = sharedPref.edit();
+        editor.putString("SendToKey", sendTo);
+        editor.commit();
+
 
         //RecyclerView
         mMessageList = new ArrayList<MotherOfAllMessages>();
@@ -101,14 +106,8 @@ public class ChatActivity extends AppCompatActivity {
                 myIntentFilter);
 
         //Database
-        new Thread(new Runnable(){
-            @Override
-            public void run() {
-
-            }
-        });
         db = Room.databaseBuilder(getApplicationContext(), AppDatabase.class,
-                "ChatLog").allowMainThreadQueries().build();
+                sendTo).allowMainThreadQueries().build();
         msgLog = db.userDao().getAll();
         for(MessageEntity messageEntity: msgLog){
             com.example.larsv.chatapplication.Messages.Message msg =
@@ -126,6 +125,7 @@ public class ChatActivity extends AppCompatActivity {
         // Bind to the service
         bindService(new Intent(this, CommunicationIntentService.class), mConnection,
                 Context.BIND_AUTO_CREATE);
+        sendMessengerMessage(sendTo);
     }
     @Override
     protected void onStop() {
@@ -144,9 +144,11 @@ public class ChatActivity extends AppCompatActivity {
             chatWindow.setText("");
             final com.example.larsv.chatapplication.Messages.Message msg =
                     new com.example.larsv.chatapplication.Messages.Message(
-                            msgToSend,"ALL",username);
-            mMessageList.add(msg);
-            mMessageAdapter.notifyItemInserted(mMessageList.size() - 1);
+                            msgToSend, sendTo, username);
+            if(!username.equals(sendTo)){
+                mMessageList.add(msg);
+                mMessageAdapter.notifyItemInserted(mMessageList.size() - 1);
+            }
             mMessageRecycler.scrollToPosition(mMessageAdapter.getItemCount() - 1);
 
             //Send
@@ -166,11 +168,25 @@ public class ChatActivity extends AppCompatActivity {
                                 mos.writeMessage(msg);
                             } catch (IOException e) {
                                 e.printStackTrace();
+                                if(socket != null){
+                                    if (!socket.isClosed()){
+                                        try {
+                                            socket.close();
+                                        } catch (IOException e1) {
+                                            e1.printStackTrace();
+                                        }
+                                    }
+                                }
+                                socket = null;
+                                Intent backToStart = new Intent(getApplicationContext(),
+                                        MainActivity.class);
+                                startActivity(backToStart);
                             }
                         }
                     }
             ).start();
-            db.userDao().insertAll(new MessageEntity(msg.getFrom(),msg.getTo(),msg.getContent()));
+            if(!username.equals(sendTo))
+                db.userDao().insertAll(new MessageEntity(msg.getFrom(),msg.getTo(),msg.getContent()));
         }
     }
 
@@ -187,10 +203,13 @@ public class ChatActivity extends AppCompatActivity {
         }
     };
 
-    void sendMessengerMessage(){
+    void sendMessengerMessage(String msgToSend){
         if (!mBound) return;
         // Create and send a message to the service, using a supported 'what' value
         Message msg = Message.obtain(null, CommunicationIntentService.MSG_SAY_HELLO, 0, 0);
+        Bundle data = new Bundle();
+        data.putString(MESSENGER_MESSAGE, msgToSend);
+        msg.setData(data);
         try {
             mService.send(msg);
         } catch (RemoteException e) {
