@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.support.constraint.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="wrap_content"
+    android:paddingTop="8dp"
+    >
+
+    <TextView
+        android:id="@+id/user_txt"
+        android:text="hello, hello!"
+        android:background="@drawable/user_drawable"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:maxWidth="240dp"
+        android:padding="8dp"
+        android:textColor="#ffffff"
+        android:layout_marginEnd="8dp"
+        android:textAlignment="center"
+     />
+
+
+
+</android.support.constraint.ConstraintLayout>

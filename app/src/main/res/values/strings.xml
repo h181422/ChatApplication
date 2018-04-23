@@ -1,0 +1,10 @@
+<resources>
+    <string name="app_name">ChatApplication</string>
+    <string name="login">Login</string>
+    <string name="myUsernameKey">myUsernameKey</string>
+    <string name="username">Username</string>
+    <string name="password">Password</string>
+    <string name="title_activity_initial">InitialActivity</string>
+    <string name="welcome_">Welcome</string>
+    <string name="username2">USERNAMEEEEEEE2</string>
+</resources>
