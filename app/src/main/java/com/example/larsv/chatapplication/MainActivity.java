@@ -70,6 +70,7 @@ public class MainActivity extends AppCompatActivity {
                 myIntentFilter);
     }
 
+    //login by sending username and password to the server
     public void buttonLogin(View view){
         //save user info
         username = txtUsername.getText().toString();
@@ -90,6 +91,7 @@ public class MainActivity extends AppCompatActivity {
 
 
     }
+    //create an ccount by sending username and password to the server
     public void buttonCreate(View view){
         username = txtUsername.getText().toString();
         address = txtIP.getText().toString();
@@ -109,12 +111,13 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
+    //when login is confirmed by server, proceed to the next activity
     public void loggedIn(){
         Intent intentToMenu = new Intent(this, MenuActivity.class);
         startActivity(intentToMenu);
     }
 
-    //Alerted when login is done
+    //Alerted when login is done, proceed to next activity
     public class MyReceiver extends BroadcastReceiver {
         @Override
         public void onReceive(Context context, Intent intent) {
@@ -138,6 +141,7 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    //Used to send a message (And to help connect if disconnected)
     private class LoginTask extends AsyncTask<LoginMessage, Integer, Boolean> {
         protected Boolean doInBackground(LoginMessage... msg) {
             try {
@@ -145,17 +149,10 @@ public class MainActivity extends AppCompatActivity {
                 while(CommunicationIntentService.getSocket() == null){
                     Thread.sleep(1);
                     count++;
-                    //Check if conneccted, if not connect
-                    //CommunicationIntentService.connectSocketIfDown(address, PORT);
-                    //try again
+                    //Check if conneccted, if not connecteded: try again once
                     if(count > WAIT_FOR_CONNECTION/2) CommunicationIntentService.connectSocketIfDown(address, PORT);
                     if (count > WAIT_FOR_CONNECTION){
-                        btnCreate.setAlpha(1f);
-                        btnCreate.setClickable(true);
-                        btnCreate.setText("Create");
-                        btnSend.setAlpha(1f);
-                        btnSend.setClickable(true);
-                        btnSend.setText("Login");
+                        buttonsOnOff(true);
                         Log.i("MainActivity.LoginTask", "Wait for connection timed out");
                         return false;
                     }
@@ -181,13 +178,26 @@ public class MainActivity extends AppCompatActivity {
         @Override
         protected void onPreExecute() {
             super.onPreExecute();
+            buttonsOnOff(false);
+        }
+    }
+
+    //Helps to make the buttons available only when they should
+    public void buttonsOnOff(Boolean onOrOff){
+        if(onOrOff){
             btnCreate.setAlpha(.5f);
             btnCreate.setClickable(false);
             btnCreate.setText("Waiting..");
             btnSend.setAlpha(.5f);
             btnSend.setClickable(false);
             btnSend.setText("Waiting..");
+        }else{
+            btnCreate.setAlpha(1f);
+            btnCreate.setClickable(true);
+            btnCreate.setText("Create");
+            btnSend.setAlpha(1f);
+            btnSend.setClickable(true);
+            btnSend.setText("Login");
         }
     }
-
 }

@@ -20,6 +20,8 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 
+//Used by Recycler view to populate the view with messages
+
 public class MessageListAdapter extends RecyclerView.Adapter {
     private static final int VIEW_TYPE_MESSAGE_SENT = 1;
     private static final int VIEW_TYPE_MESSAGE_RECEIVED = 2;
@@ -28,12 +30,14 @@ public class MessageListAdapter extends RecyclerView.Adapter {
     private Context mContext;
     private List<MotherOfAllMessages> mMessageList;
 
-    public MessageListAdapter(Context context, List<MotherOfAllMessages> messageList, String username) {
+    public MessageListAdapter(Context context, List<MotherOfAllMessages> messageList,
+                              String username) {
         mContext = context;
         mMessageList = messageList;
         this.username = username;
     }
 
+    //Add the message to the right type of view (send or receive)
     @Override
     public RecyclerView.ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
         View view;

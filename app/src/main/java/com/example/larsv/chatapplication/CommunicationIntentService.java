@@ -57,19 +57,18 @@ public class CommunicationIntentService extends IntentService {
     }
 
 
+    //Keep track of whether it's bound or not
     @Override
     public IBinder onBind(Intent intent) {
         Toast.makeText(getApplicationContext(), "binding", Toast.LENGTH_SHORT).show();
         amIBound = true;
         return mMessenger.getBinder();
     }
-
     @Override
     public void onRebind(Intent intent) {
         super.onRebind(intent);
         amIBound = true;
     }
-
     @Override
     public boolean onUnbind(Intent intent) {
         boolean b = super.onUnbind(intent);
@@ -77,20 +76,18 @@ public class CommunicationIntentService extends IntentService {
         return b;
     }
 
-    @Override
-    public int onStartCommand(@Nullable Intent intent, int flags, int startId) {
-        return super.onStartCommand(intent, flags, startId);
-    }
-
+    //The thread
     @Override
     protected void onHandleIntent(Intent intent) {
         if (intent != null) {
+            //Sets up varables
             final String action = intent.getAction();
             if (ACTION_SENDMSG.equals(action)) {
                 final String param1 = intent.getStringExtra(MainActivity.USERNAME);
                 address = intent.getStringExtra(MainActivity.ADDRESS);
                 username = param1;
-                SharedPreferences sharedPref = getSharedPreferences("UserInfo", Context.MODE_PRIVATE);
+                SharedPreferences sharedPref = getSharedPreferences("UserInfo",
+                        Context.MODE_PRIVATE);
                 sendTo = sharedPref.getString("sendToKey", "ALL");
 
                 IncomingHandler ih = new IncomingHandler();
@@ -105,10 +102,8 @@ public class CommunicationIntentService extends IntentService {
         }
     }
 
-    /**
-     * Handle action Foo in the provided background thread with the provided
-     * parameters.
-     */
+
+    //Helper method for on handle intent
     private void handleActionFoo() {
         try {
             //Logging in
@@ -125,12 +120,14 @@ public class CommunicationIntentService extends IntentService {
             e.printStackTrace();
         }
         try {
+            //Receives messages and determines what to do with them
             while(true) {
                 //Using the MessageInputStream to read a message from the socket
                 mom = mis.readMessage();
 
                 //save to correct database (one per client you chat with. + one for ALL)
-                SharedPreferences sharedPref = getSharedPreferences("UserInfo", Context.MODE_PRIVATE);
+                SharedPreferences sharedPref = getSharedPreferences("UserInfo",
+                        Context.MODE_PRIVATE);
                 sendTo = sharedPref.getString("SendToKey", "ALL");
                 Log.i(TAG, sendTo);
 
@@ -142,31 +139,35 @@ public class CommunicationIntentService extends IntentService {
 
                 //Determine what type of message you received
                 if(mom.getType() == MotherOfAllMessages.MESSAGE) {
+                    //Normal message: broadcast to the chat activity
                     com.example.larsv.chatapplication.Messages.Message msg =
                             (com.example.larsv.chatapplication.Messages.Message)mom;
-
-
                     Intent broadcastIntent = new Intent(ChatActivity.BROADCAST);
                     broadcastIntent.putExtra(MSG_RECEIVED, msg.serialize());
                     LocalBroadcastManager.getInstance(this).sendBroadcast(broadcastIntent);
+                    //or if server announces a change in users online: tell the menu
                     if(msg.getFrom().equals("Server")){
                         Intent broadcastIntent2 = new Intent(PEOPLE_ONLINE);
                         broadcastIntent2.putExtra(MenuActivity.REQUEST_NEW, true);
                         LocalBroadcastManager.getInstance(this).sendBroadcast(broadcastIntent2);
                     }
-
+                    //Also save the message to the log database
                     db = Room.databaseBuilder(getApplicationContext(), AppDatabase.class,
-                            msg.getTo().equals("ALL") ? "ALL" : msg.getFrom()).allowMainThreadQueries().build();
+                            msg.getTo().equals("ALL") ? "ALL" : msg.getFrom()
+                    ).allowMainThreadQueries().build();
                     if(msg.getTo().equals(username) || msg.getTo().equals("ALL"))
-                        db.userDao().insertAll(new MessageEntity(msg.getFrom(),msg.getTo(),msg.getContent()));
+                        db.userDao().insertAll(new MessageEntity(msg.getFrom(),
+                                msg.getTo(),msg.getContent()));
                 }
                 else if(mom.getType()==MotherOfAllMessages.USERS_ONLINE_MESSAGE) {
+                    //Broadcast list of online users to the menu activity
                     UsersOnline uo = (UsersOnline)mom;
                     Intent broadcastIntent = new Intent(PEOPLE_ONLINE);
                     broadcastIntent.putExtra(PEOPLE_ONLINE, uo.toStringArray());
                     LocalBroadcastManager.getInstance(this).sendBroadcast(broadcastIntent);
                 }
                 else if(mom.getType() == MotherOfAllMessages.UPDATE_MESSAGE) {
+                    //Response to login attempt: broadcast to main/login activity
                     UpdateMessage umsg = (UpdateMessage)mom;
                    if( umsg.getStatus() == UpdateMessage.LOGIN_OK){
                         Intent broadcastIntent = new Intent(LOGIN_DONE);
@@ -197,14 +198,13 @@ public class CommunicationIntentService extends IntentService {
     }
 
 
-
+    //Handler currently not in use
     class IncomingHandler extends Handler {
         @Override
         public void handleMessage(Message msg) {
             switch (msg.what) {
                 case MSG_SAY_HELLO:
-                    sendTo = msg.getData().getString(ChatActivity.MESSENGER_MESSAGE);
-                    Log.i(TAG, "Handler Message received. " + sendTo);
+                    //sendTo = msg.getData().getString(ChatActivity.MESSENGER_MESSAGE);
                     break;
                 default:
                     super.handleMessage(msg);

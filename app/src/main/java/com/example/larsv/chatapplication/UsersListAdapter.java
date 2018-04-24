@@ -12,6 +12,8 @@ import android.widget.TextView;
 
 import java.util.List;
 
+//Used to populate recycler view in menu activity with clickable usernames that you can chat with
+
 public class UsersListAdapter extends RecyclerView.Adapter{
     private static final int VIEW_TYPE_USER = 1;
     final String TAG = "TAGTAG";

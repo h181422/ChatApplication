@@ -75,9 +75,11 @@ public class ChatActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_chat);
 
+        //get the name of whoever you are going to send messages to
         if (savedInstanceState == null) {
             Bundle extras = getIntent().getExtras();
             sendTo = extras.getString(MenuActivity.SEND_TO);
+            //Tells you who you are chatting with
             Toast.makeText(this, sendTo, Toast.LENGTH_SHORT).show();
         }
 
@@ -85,13 +87,13 @@ public class ChatActivity extends AppCompatActivity {
         sharedPref = getSharedPreferences("UserInfo", Context.MODE_PRIVATE);
         username = sharedPref.getString(getResources().getString(R.string.myUsernameKey), "Stranger");
         chatWindow = (EditText)findViewById(R.id.edittext_chatbox);
-
+        //Save who you are currently chatting with to the preferences
         SharedPreferences.Editor editor = sharedPref.edit();
         editor.putString("SendToKey", sendTo);
         editor.commit();
 
 
-        //RecyclerView
+        //RecyclerView that shows messages
         mMessageList = new ArrayList<MotherOfAllMessages>();
         mMessageRecycler = (RecyclerView) findViewById(R.id.reyclerview_message_list);
         mMessageAdapter = new MessageListAdapter(this, mMessageList, username);
@@ -119,6 +121,8 @@ public class ChatActivity extends AppCompatActivity {
         mMessageAdapter.notifyDataSetChanged();
         mMessageRecycler.scrollToPosition(mMessageAdapter.getItemCount() - 1);
     }
+
+    //Binds to the communication thread
     @Override
     protected void onStart() {
         super.onStart();
@@ -137,7 +141,8 @@ public class ChatActivity extends AppCompatActivity {
         }
     }
 
-
+    //Open a new thread to send a message containing you, the receiver and the content
+    //Also send the message to your own screen and the chat log database
     public void sendMessage(View view){
         String msgToSend = chatWindow.getText().toString();
         if(!msgToSend.equals("")){
@@ -191,6 +196,7 @@ public class ChatActivity extends AppCompatActivity {
     }
 
 
+    //gets socket when connected to communication service
     private ServiceConnection mConnection = new ServiceConnection() {
         public void onServiceConnected(ComponentName className, IBinder service) {
             mService = new Messenger(service);
@@ -202,7 +208,8 @@ public class ChatActivity extends AppCompatActivity {
             mBound = false;
         }
     };
-
+    //Send a handler message to the communication thread
+    //NOT used
     void sendMessengerMessage(String msgToSend){
         if (!mBound) return;
         // Create and send a message to the service, using a supported 'what' value
@@ -217,6 +224,7 @@ public class ChatActivity extends AppCompatActivity {
         }
     }
 
+    //Receives the received messages from the communication thread and prints to screen
     public class MyReceiver extends BroadcastReceiver {
         @Override
         public void onReceive(Context context, Intent intent) {

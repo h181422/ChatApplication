@@ -52,13 +52,12 @@ public class MenuActivity extends AppCompatActivity {
                 + username;
         txtWelcome.setText(welcomeDisplay);
 
+        //intent filter that listens for broadcasts used to update the list of online users
         IntentFilter myIntentFilter = new IntentFilter(CommunicationIntentService.PEOPLE_ONLINE);
         LocalBroadcastManager.getInstance(this).registerReceiver(new MenuActivity.MyReceiver(),
                 myIntentFilter);
 
-
-        Log.i("TAGTAG", "on create i menu");
-
+        //Variables for the recycler view to show the list of online users
         mUserList = new ArrayList<String>();
         mUserRecycler = (RecyclerView) findViewById(R.id.usersRecycler);
         mUserAdapter = new UsersListAdapter(this, mUserList);
@@ -70,11 +69,13 @@ public class MenuActivity extends AppCompatActivity {
 
     }
 
+    //on start send a request to get the users online, to get an up-to-date list
     @Override
     protected void onStart() {
         super.onStart();
         sendReq();
     }
+    //Thread to send request
     public void sendReq(){
         new Thread(new Runnable(){
             @Override
@@ -82,7 +83,6 @@ public class MenuActivity extends AppCompatActivity {
                 try {
                     new MessageOutputStream(CommunicationIntentService.getSocket().getOutputStream()).
                             writeMessage(new UpdateMessage(username, UpdateMessage.REQUEST_USERS_ONLINE));
-                    Log.i("TAGTAG", "Request for uo sent");
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
@@ -90,6 +90,7 @@ public class MenuActivity extends AppCompatActivity {
         }).start();
     }
 
+    //A button that sends you to the chat activity where you can chatt with all online user
     public void buttonChatWithAll(View view){
         Intent intent = new Intent(this, ChatActivity.class);
         intent.putExtra(SEND_TO, sendTo);
@@ -97,16 +98,16 @@ public class MenuActivity extends AppCompatActivity {
 
     }
     private Activity getActivity(){
-        return this; //???
+        return this;
     }
 
 
+    //Receiver that receives a list of users online, or a message saying it should request one
     public class MyReceiver extends BroadcastReceiver {
         @Override
         public void onReceive(Context context, Intent intent) {
             Log.i("TAGTAG", "onReceive");
             String[] ppl = intent.getStringArrayExtra(CommunicationIntentService.PEOPLE_ONLINE);
-            //mUserList = Arrays.asList(intent.getStringArrayExtra(CommunicationIntentService.PEOPLE_ONLINE));
             if(ppl != null){
                 mUserList.clear();
                 for(String s : ppl){
