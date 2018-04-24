@@ -64,9 +64,11 @@ public class MenuActivity extends AppCompatActivity {
         LinearLayoutManager llm = new LinearLayoutManager(this);
         mUserRecycler.setLayoutManager(llm);
         mUserRecycler.setAdapter(mUserAdapter);
+    }
 
-
-
+    @Override
+    public void onBackPressed() {
+        //Dont go back there!
     }
 
     //on start send a request to get the users online, to get an up-to-date list

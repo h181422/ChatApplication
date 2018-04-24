@@ -123,12 +123,7 @@ public class MainActivity extends AppCompatActivity {
         public void onReceive(Context context, Intent intent) {
             byte[] didItWork = intent.getByteArrayExtra(CommunicationIntentService.LOGIN_DONE);
             UpdateMessage umsg = new UpdateMessage(didItWork);
-            btnCreate.setAlpha(1f);
-            btnCreate.setClickable(true);
-            btnCreate.setText("Create");
-            btnSend.setAlpha(1f);
-            btnSend.setClickable(true);
-            btnSend.setText("Login");
+            buttonsOnOff(true);
             if(umsg.getStatus() == UpdateMessage.LOGIN_OK){
                 loggedIn();
             }else if(umsg.getStatus() == UpdateMessage.LOGIN_FAILED){
@@ -153,7 +148,6 @@ public class MainActivity extends AppCompatActivity {
                     if(count > WAIT_FOR_CONNECTION/2) CommunicationIntentService.connectSocketIfDown(address, PORT);
                     if (count > WAIT_FOR_CONNECTION){
                         buttonsOnOff(true);
-                        Log.i("MainActivity.LoginTask", "Wait for connection timed out");
                         return false;
                     }
                 }
@@ -184,7 +178,7 @@ public class MainActivity extends AppCompatActivity {
 
     //Helps to make the buttons available only when they should
     public void buttonsOnOff(Boolean onOrOff){
-        if(onOrOff){
+        if(!onOrOff){
             btnCreate.setAlpha(.5f);
             btnCreate.setClickable(false);
             btnCreate.setText("Waiting..");
