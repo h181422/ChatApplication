@@ -28,6 +28,7 @@ import java.util.List;
 public class MenuActivity extends AppCompatActivity {
 
     public final static String SEND_TO = "SEND_TO";
+    public final static String REQUEST_NEW = "REQUEST_NEW";
 
     TextView txtWelcome;
     String[] usersOnline;
@@ -55,28 +56,38 @@ public class MenuActivity extends AppCompatActivity {
         LocalBroadcastManager.getInstance(this).registerReceiver(new MenuActivity.MyReceiver(),
                 myIntentFilter);
 
-        new Thread(new Runnable(){
-            @Override
-            public void run() {
-                try {
-                    new MessageOutputStream(CommunicationIntentService.getSocket().getOutputStream()).
-                    writeMessage(new UpdateMessage(username, UpdateMessage.REQUEST_USERS_ONLINE));
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-        }).start();
+
+        Log.i("TAGTAG", "on create i menu");
 
         mUserList = new ArrayList<String>();
         mUserRecycler = (RecyclerView) findViewById(R.id.usersRecycler);
         mUserAdapter = new UsersListAdapter(this, mUserList);
         LinearLayoutManager llm = new LinearLayoutManager(this);
-        //llm.setStackFromEnd(true);
         mUserRecycler.setLayoutManager(llm);
         mUserRecycler.setAdapter(mUserAdapter);
 
 
 
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        sendReq();
+    }
+    public void sendReq(){
+        new Thread(new Runnable(){
+            @Override
+            public void run() {
+                try {
+                    new MessageOutputStream(CommunicationIntentService.getSocket().getOutputStream()).
+                            writeMessage(new UpdateMessage(username, UpdateMessage.REQUEST_USERS_ONLINE));
+                    Log.i("TAGTAG", "Request for uo sent");
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }).start();
     }
 
     public void buttonChatWithAll(View view){
@@ -96,8 +107,15 @@ public class MenuActivity extends AppCompatActivity {
             Log.i("TAGTAG", "onReceive");
             String[] ppl = intent.getStringArrayExtra(CommunicationIntentService.PEOPLE_ONLINE);
             //mUserList = Arrays.asList(intent.getStringArrayExtra(CommunicationIntentService.PEOPLE_ONLINE));
-            for(String s : ppl){
-                mUserList.add(s);
+            if(ppl != null){
+                mUserList.clear();
+                for(String s : ppl){
+                    mUserList.add(s);
+                }
+            }
+
+            if(intent.getBooleanExtra(REQUEST_NEW, false)){
+                sendReq();
             }
             mUserAdapter.notifyDataSetChanged();
         }

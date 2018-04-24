@@ -133,8 +133,6 @@ public class CommunicationIntentService extends IntentService {
                 SharedPreferences sharedPref = getSharedPreferences("UserInfo", Context.MODE_PRIVATE);
                 sendTo = sharedPref.getString("SendToKey", "ALL");
                 Log.i(TAG, sendTo);
-                db = Room.databaseBuilder(getApplicationContext(), AppDatabase.class,
-                        sendTo).allowMainThreadQueries().build();
 
 
                 if(mom == null) {
@@ -147,10 +145,20 @@ public class CommunicationIntentService extends IntentService {
                     com.example.larsv.chatapplication.Messages.Message msg =
                             (com.example.larsv.chatapplication.Messages.Message)mom;
 
+
                     Intent broadcastIntent = new Intent(ChatActivity.BROADCAST);
                     broadcastIntent.putExtra(MSG_RECEIVED, msg.serialize());
                     LocalBroadcastManager.getInstance(this).sendBroadcast(broadcastIntent);
-                    db.userDao().insertAll(new MessageEntity(msg.getFrom(),msg.getTo(),msg.getContent()));
+                    if(msg.getFrom().equals("Server")){
+                        Intent broadcastIntent2 = new Intent(PEOPLE_ONLINE);
+                        broadcastIntent2.putExtra(MenuActivity.REQUEST_NEW, true);
+                        LocalBroadcastManager.getInstance(this).sendBroadcast(broadcastIntent2);
+                    }
+
+                    db = Room.databaseBuilder(getApplicationContext(), AppDatabase.class,
+                            msg.getTo().equals("ALL") ? "ALL" : msg.getFrom()).allowMainThreadQueries().build();
+                    if(msg.getTo().equals(username) || msg.getTo().equals("ALL"))
+                        db.userDao().insertAll(new MessageEntity(msg.getFrom(),msg.getTo(),msg.getContent()));
                 }
                 else if(mom.getType()==MotherOfAllMessages.USERS_ONLINE_MESSAGE) {
                     UsersOnline uo = (UsersOnline)mom;
@@ -193,7 +201,6 @@ public class CommunicationIntentService extends IntentService {
     class IncomingHandler extends Handler {
         @Override
         public void handleMessage(Message msg) {
-            Log.i(TAG, "Handler Message received. " + sendTo+" 1");
             switch (msg.what) {
                 case MSG_SAY_HELLO:
                     sendTo = msg.getData().getString(ChatActivity.MESSENGER_MESSAGE);

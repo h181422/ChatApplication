@@ -223,9 +223,12 @@ public class ChatActivity extends AppCompatActivity {
             com.example.larsv.chatapplication.Messages.Message msgReceived =
                     new com.example.larsv.chatapplication.Messages.Message(
                             intent.getByteArrayExtra(CommunicationIntentService.MSG_RECEIVED));
-            mMessageList.add(msgReceived);
-            mMessageAdapter.notifyItemInserted(mMessageList.size() - 1);
-            mMessageRecycler.scrollToPosition(mMessageAdapter.getItemCount() - 1);
+            if((msgReceived.getFrom().equals(sendTo) && msgReceived.getTo().equals(username)) ||
+                    (msgReceived.getTo().equals("ALL") && sendTo.equals("ALL"))){
+                mMessageList.add(msgReceived);
+                mMessageAdapter.notifyItemInserted(mMessageList.size() - 1);
+                mMessageRecycler.scrollToPosition(mMessageAdapter.getItemCount() - 1);
+            }
         }
     }
 
